@@ -1,0 +1,14 @@
+6. Unrestricted Access to Sensitive Business Flows
+
+What it is
+Core business logic that should have strict guardrails has none. Users can bypass business rules and trigger flows that should never be allowed in their situation.
+
+A sales agent creates a sale for a customer in an area that doesn't have coverage. The endpoint that creates the sale never verified that coverage exists. A business rule was violated. In financial terms, this causes loss. In operational terms, this causes the kind of problems that take months to untangle.
+
+The Engineering Failure
+Business logic isn't identified and isn't enforced at the domain layer. Domain-Driven Design exists precisely for this reason: business logic breaks or makes your application. When the domain layer isn't properly designed, and business rules aren't explicitly encoded, users can bypass them.
+
+The guardrails are missing because the engineers didn't know the guardrails were supposed to exist there. This is a domain knowledge problem as much as a technical problem.
+
+The Engineering Fix
+Business rules belong in the domain layer. This is what Value Objects and domain entities enforce. A sale can't be created unless coverage is confirmed. That rule is encoded into the domain, not into the API endpoint or the UI.
