@@ -1,0 +1,12 @@
+7. Security Misconfiguration
+
+What it is
+A developer's personal debugging process shipped to production. Verbose error messages exposing stack traces. Debug endpoints left active. Permissive CORS allowing any origin. Sensitive data in logs. The developer's local configuration running in a production environment.
+
+The Engineering Failure
+These types of issues tend to happen when there's no separation between development, staging, and production configurations. There's no pipeline gate that catches misconfiguration before it reaches production. Each developer manages their own configuration, which means every developer's habits and debugging preferences can end up in production.
+
+The Engineering Fix
+Set up different workflows for every environment. The production pipeline must include static analysis, configuration validation, and linting that catches debug endpoints, permissive CORS, verbose error logging, and exposed secrets before a merge is allowed.
+
+CORS in production must use explicit allowed origins. Wildcard CORS in production is a direct security failure that allows any web page on the internet to make authenticated requests to your API using the visitor's credentials.
