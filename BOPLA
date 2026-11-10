@@ -1,0 +1,16 @@
+3. Broken Object Property Level Authorization (BOPLA)
+
+What it is
+The API returns more data than the user needs. Internal flags, admin permissions, and sensitive fields that should never leave the server end up in the response payload. Or worse: the API accepts more data than the user should be able to set, allowing users to modify fields they should never touch.
+
+A user fetches their profile and the response includes isAdmin: false, internalAccountScore: 742, or fraudRiskLevel: "low". None of these should ever be in a user-facing response.
+
+Or a user updates their profile and the request body includes "role": "admin". The API processes it. The user has just promoted themselves to admin.
+
+The Engineering Failure
+This is a structure problem. It happens when systems are built without a deliberately designed response schema. Some developers return the raw database entity directly because it's easier. Some lack the domain knowledge to properly structure their data layer. The result is that internal data leaks into external responses.
+
+This is also an Interface Segregation Principle violation. The response interface forces the consumer to receive data it should never have access to.
+
+The Engineering Fix
+Every API endpoint must have an explicit, deliberately designed response DTO. The response DTO contains only the fields the caller is authorized to receive. The domain entity never travels directly to the response.
