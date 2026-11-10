@@ -1,0 +1,93 @@
+Using Playwright’s built-in APIRequestContext allows JavaScript/TypeScript teams to automate API security testing natively or by proxying traffic through security scanners. You can execute negative testing, unauthorized access verification, and input manipulation directly in your CI/CD pipeline.
+
+1. Basic Setup & Authentication Checks
+
+A foundational security test checks if unauthenticated or improperly authenticated requests are correctly blocked with a 401 Unauthorized or 403 Forbidden status code.
+typescript
+import { test, expect } from '@playwright/test';
+
+const BASE_URL = 'https://example.com';
+
+test.describe('API Security - Authentication & Authorization', () => {
+
+  // Test 1: Ensure endpoint rejects requests with no token
+  test('should reject requests without an Authorization header', async ({ request }) => {
+    const response = await request.get(`${BASE_URL}/v1/user/profile`);
+    
+    expect(response.status()).toBe(401);
+  });
+
+  // Test 2: Ensure endpoint rejects forged/invalid tokens
+  test('should reject requests with an invalid JWT token', async ({ request }) => {
+    const response = await request.get(`${BASE_URL}/v1/user/profile`, {
+      headers: {
+        'Authorization': 'Bearer invalid_token_xyz123'
+      }
+    });
+    
+    expect(response.status()).toBe(401);
+  });
+});
+
+
+2. Testing for BOLA / IDOR (Broken Object Level Authorization)
+
+IDOR occurs when an attacker modifies a resource ID parameter (like a user ID) in an API request to access another user's unauthorized data.
+typescript
+test('BOLA/IDOR Check: User A cannot access User B private resources', async ({ request }) => {
+  // Scenario: Authenticate as a low-privileged User A, but try to fetch User B's invoice
+  const userA_Token = 'Bearer token_user_A';
+  const targetInvoiceId = '99998'; // Invoice belonging to User B
+
+  const response = await request.get(`${BASE_URL}/v1/invoices/${targetInvoiceId}`, {
+    headers: {
+      'Authorization': userA_Token
+    }
+  });
+
+  // The API should deny access to User B's resource
+  expect(response.status()).toBe(403); 
+});
+
+
+3. Fuzzing & SQL Injection (SQLi) Payload Testing
+
+You can pass malicious strings into query parameters or JSON payloads to verify your backend handles input validation securely without leaking database details or throwing raw unhandled exceptions.
+typescript
+test('Input Validation: Should reject classic SQL injection attempts', async ({ request }) => {
+  const sqliPayload = "' OR '1'='1";
+
+  const response = await request.post(`${BASE_URL}/v1/login`, {
+    data: {
+      username: sqliPayload,
+      password: 'password123'
+    }
+  });
+
+  // Ensure it throws a proper validation error (400/422) instead of a 500 Internal Server Error
+  expect(response.status()).not.toBe(500);
+  expect(response.status()).toBe(400); 
+});
+
+
+4. Advanced DAST: Integrating Playwright with OWASP ZAP
+
+For automated vulnerability scanning (XSS, SQLi, CSRF, and dependency flaws), the industry standard is to route Playwright’s API or browser traffic through OWASP ZAP as a daemon proxy.
+1. Launch OWASP ZAP in the background or within your GitLab/GitHub Actions pipeline:bash
+zap.sh -daemon -port 8080 -config api.disablekey=true
+
+2. Configure Playwright to Proxy Traffic through ZAP in your playwright.config.ts:typescript
+import { defineConfig } from '@playwright/test';
+
+export default defineConfig({
+  use: {
+    // Route all API and UI network requests through the local ZAP proxy
+    proxy: {
+      server: 'http://localhost:8080',
+    },
+    // Ignore SSL certificate issues caused by self-signed proxy certs
+    ignoreHTTPSErrors: true, 
+  },
+});
+
+3. Run your test suite (npx playwright test). As Playwright hits your endpoints, ZAP intercepts the traffic, performs a Passive/Active Scan, and builds an automation report.
