@@ -1,0 +1,15 @@
+8. Improper Inventory Management
+
+What it is
+
+Deprecated APIs, decommissioned endpoints, and outdated API versions still running on the server. Nobody knows they exist and nobody owns them. But attackers find them and exploit them because old endpoints are often less secured than current ones.
+
+The Engineering Failure
+
+API lifecycle management is nobody's formal responsibility. Endpoints get created and features change. The old endpoint version is forgotten rather than retired. Over time, the API surface area grows with dead endpoints that still respond to requests, often without the security controls applied to newer endpoints.
+
+The Engineering Fix
+
+Someone must own the API inventory. This is a formal engineering responsibility, not an optional practice. Every API endpoint must be documented, versioned, and have a defined lifecycle: active, deprecated, or decommissioned.
+
+Deprecated endpoints should return a response header indicating their deprecation date. Decommissioned endpoints must return 410 Gone, not continue to process requests.
