@@ -1,0 +1,15 @@
+5. Broken Function Level Authorization (BFLA)
+
+What it is
+
+A regular user gets access to functions or endpoints that should only be accessible to admins or privileged roles. The frontend hides the button, but the endpoint is still there, wide open.
+
+A regular user token is used to call an admin endpoint. It works. The attacker now has admin functionality with a non-admin account.
+
+Security through obscurity is not security. Hiding admin resources at the UI level doesn't equal security.
+
+The Engineering Failure
+RBAC (Role-Based Access Control) is either not implemented or implemented incorrectly. Authorization checks are missing at the function level. The assumption is that if a user can't see the admin button in the UI, they can't call the admin API. This assumption is always wrong. Any developer tool can call any API endpoint directly, bypassing the UI entirely.
+
+The Engineering Fix
+Every function must check the caller's role before executing. This check must happen in the service layer, not the UI layer, and not the API gateway alone. The gateway can verify that a token is valid. Only the service layer knows what roles are required for each specific operation.
