@@ -1,0 +1,17 @@
+2. Broken Authentication
+
+What it is
+
+Weak tokens, no token expiry, no rate limiting on authentication endpoints, or sessions that never terminate on logout. Any weakness in the mechanism that identifies who's making a request.
+
+The Engineering Failure
+Authentication is treated as a solved problem once it's working. Engineers implement login, get a token back, and move on. The failure modes (like what happens when a token is stolen, or if an attacker hammers the login endpoint with a list of passwords, or when a user logs out) are never designed for.
+
+The authentication mechanism must be designed for adversarial conditions, not just for happy path usage.
+
+The Engineering Fix
+Token expiry is mandatory. Access tokens should be short-lived: 15 minutes to 1 hour. Refresh tokens handle session continuity. Short-lived access tokens limit the damage window when a token is stolen.
+
+Rate limiting on authentication endpoints is mandatory. A login endpoint without rate limiting is an open invitation for brute force attacks. An attacker with a list of 10 million email and password combinations will systematically try every one.
+
+Sessions must actually terminate on logout. If you're using stateful sessions, the session must be invalidated server-side on logout. If you're using JWT, maintain a token blocklist or use a very short expiry with refresh token rotation.
