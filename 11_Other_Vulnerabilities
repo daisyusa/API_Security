@@ -1,0 +1,79 @@
+Engineering Vulnerabilities Beyond the OWASP List
+The OWASP list covers the most critical and most common API vulnerabilities. But engineering experience surfaces additional patterns that can create serious security gaps.
+
+APIs Called by Multiple Clients Without Domain Allowlisting
+Some APIs called by multiple clients don't enforce which domains are allowed to call them. This makes it possible for people to share API keys and access resources from unauthorized origins.
+
+In large-scale organizations, this is a major security gap that often goes unnoticed because the API technically works correctly from every client.
+
+The fix: every API that accepts an API key must also validate the calling domain. API keys and allowed domains must be explicitly paired.
+
+Exposing Secrets in Code and Logs
+A developer leaves secret keys, public keys, and credentials in their code, in their repository, or on their machine. Adding files to .gitignore isn't enough. These datasets must be fetched from a trusted secrets manager at runtime, never stored in source code.
+
+Organizations must use vaults, Azure App Configuration, AWS Secrets Manager, or equivalent systems. This must be an engineering standard, not a developer preference. The vault access pattern must be standardized so developers don't have to figure this out per project.
+
+Microservices Talking to Each Other Without a Gateway
+If you are building microservices, every communication between services must be treated as sensitive. There must be an API gateway that handles authentication for all services. Services must not trust each other implicitly. Every inter-service call must be authenticated.
+
+Communication between microservices should use event brokers like Kafka for asynchronous flows, or mTLS for synchronous flows. No microservice should be directly accessible from the internet without going through the gateway.
+
+Encryption Without Organizational Standards
+Organizations must have standardized encryption algorithms. Not developer-chosen algorithms, not algorithm-of-the-week, and not whatever the developer found in a Stack Overflow answer. A staff-level engineering decision must specify which algorithm, which mode, and which key length is the organizational standard.
+
+The vulnerabilities that come from ad-hoc encryption choices are serious: padding oracle attacks, weak key lengths, IV reuse, and stack traces during encryption failures that reveal internal implementation details to callers.
+
+The engineering control: expose internally built packages or cloud functions for encryption that projects import rather than implement. Developers use the package. They never write encryption from scratch per project.
+
+SQL Injection
+SQL injection is 25 years old. It's been in existence since 1998. But it still happens because engineering standards aren't enforced.
+
+It happens because developers build queries with string concatenation, taking user input and gluing it into a SQL string. The fix is parameterized queries or prepared statements, always. Raw SQL strings with user input concatenated are never acceptable.
+
+Dart:
+
+//Wrong  string concatenation — SQL injection vulnerability
+Future<User?> findUser(String email) async {
+  final query = "SELECT * FROM users WHERE email = '$email'";
+  // attacker passes: admin@example.com' OR '1'='1
+  // query becomes: SELECT * FROM users WHERE email = 'admin@example.com' OR '1'='1'
+  // returns all users
+  return await database.rawQuery(query);
+}
+
+// parameterized query — injection proof
+Future<User?> findUser(String email) async {
+  final results = await database.query(
+    'users',
+    where: 'email = ?',    
+    whereArgs: [email],     
+  );
+  return results.isNotEmpty ? User.fromMap(results.first) : null;
+}
+C#:
+
+// Wrong string concatenation
+public async Task<User?> FindUser(string email)
+{
+    var query = $"SELECT * FROM Users WHERE Email = '{email}'";
+    return await _context.Users.FromSqlRaw(query).FirstOrDefaultAsync();
+}
+
+// Correct parameterized query using EF Core
+public async Task<User?> FindUser(string email)
+{
+    return await _context.Users
+        .Where(u => u.Email == email)
+        .FirstOrDefaultAsync();
+}
+
+// Correct parameterized raw SQL when needed
+public async Task<User?> FindUserRaw(string email)
+{
+    return await _context.Users
+        .FromSqlRaw("SELECT * FROM Users WHERE Email = {0}", email)
+        .FirstOrDefaultAsync();
+}
+This is a major vulnerability that comes from core engineering decisions that should be under strict governance and compliance principles. These principles help establish development standards on projects and in organizations.
+
+This could also be enforced at CI CD level. If static analysis in the CI/CD pipeline doesn't catch raw SQL string concatenation, your team should add it. This is a vulnerability class that should never reach production.
