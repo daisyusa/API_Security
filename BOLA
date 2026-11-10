@@ -1,0 +1,18 @@
+1. Broken Object Level Authorization (BOLA)
+
+What it is
+
+A user is authenticated and they have a valid token. But they can access data that doesn't belong to them simply by changing an identifier in the request.
+
+GET /api/accounts/12345/transactions
+User A is authenticated and owns account 12345. They change the account number:
+
+GET /api/accounts/99999/transactions
+If the API returns User B's transactions, BOLA exists. The user is authenticated but the API isn't verifying that the authenticated user owns the requested resource.
+
+This is the most common API vulnerability in the world. It consistently tops the OWASP list because it's so easy to introduce and so easy to miss in code review.
+
+The Engineering Failure
+BOLA happens when authorization is treated as a binary question: is this user authenticated? Yes or no. The API checks whether the user has a valid token and stops there. It never asks the second question: does this authenticated user own the specific resource they're requesting?
+
+The authentication isn't ID-agnostic. It proves who you are but it never proves whether the thing you are asking for belongs to you.
