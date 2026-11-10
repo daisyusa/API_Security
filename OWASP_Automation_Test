@@ -1,0 +1,93 @@
+To perform an OWASP automation test, you need to integrate Dynamic Application Security Testing (DAST) or Static Application Security Testing (SAST) tools directly into your CI/CD pipeline using the OWASP Automation Framework.
+The industry standard for this process is OWASP ZAP (Zed Attack Proxy), a powerful, open-source tool built specifically for automated vulnerability scanning.
+
+Step 1: Select Your Core Automation Tools
+
+Depending on your application type, choose the appropriate automated scanner:
+• OWASP ZAP (DAST): Best for traditional web apps and REST APIs. It simulates active attacks on running environments.
+• OWASP Dependency-Check (SCA): Automatically detects publicly disclosed vulnerabilities within your project’s third-party dependencies.
+• SonarQube / Semgrep (SAST): Scans your source code for OWASP Top 10 vulnerabilities before compilation.
+
+Step 2: Define the Test Scope via the ZAP Automation Framework
+
+Instead of using a manual GUI, utilize ZAP's Automation Framework (AF). This allows you to define your entire security test in a single, version-controlled YAML configuration file.
+Create a zap.yaml file outlining the environment and the scan jobs:
+yaml
+env:
+  contexts:
+    - name: "WebApp-Context"
+      urls:
+        - "https://your-staging-app.com"
+      includePaths:
+        - "https://your-staging-app.com.*"
+      authentication:
+        # Configure login scripts or token verification here if needed
+jobs:
+  - type: passiveScan-config
+    parameters:
+      maxAlertsPerRule: 10
+  - type: spider
+    parameters:
+      context: "WebApp-Context"
+  - type: activeScan
+    parameters:
+      context: "WebApp-Context"
+  - type: report
+    parameters:
+      template: modern
+      reportDir: "/workspace/reports"
+      reportFile: "owasp-security-report"
+请谨慎使用此类代码。
+
+Step 3: Run the Automation via Docker
+
+Running ZAP inside a Docker container ensures your automation is portable, easily repeatable, and doesn't require local GUI installations.
+Run the following command to execute your configuration file:
+bash
+docker run -v $(pwd):/workspace -t ghcr.io/zaproxy/zaproxy:stable zap.sh -cmd -autorun /workspace/zap.yaml
+
+Note: If you run into API authorization errors during localized container setups, you can temporarily bypass them using the -config api.disablekey=true flag.
+
+Step 4: Integrate into your CI/CD Pipeline
+
+To achieve continuous security testing, embed this execution layer directly into your automated build workflows.
+
+GitHub Actions Example
+
+yaml
+name: OWASP Security Scan
+on: [push]
+
+jobs:
+  zap_scan:
+    runs-on: ubuntu-latest
+    name: Scan the web application
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: ZAP Scan
+        uses: zaproxy/action-baseline@v0.13.0
+        with:
+          target: 'https://your-staging-app.com'
+          rules_file_name: '.zaprules'
+          fail_action: true # Fails the build if high-risk bugs are found
+
+
+Jenkins Pipeline Example
+
+groovy
+stage('OWASP ZAP Security Scan') {
+    steps {
+        script {
+            sh 'docker run -v $(pwd):/zap/wrk:rw -t ghcr.io/zaproxy/zaproxy:stable zap-baseline.py -t https://your-staging-app.com -r owasp_report.html'
+        }
+    }
+}
+
+
+Step 5: Handle Authentication (For Deep Scans)
+
+A basic automated scan only crawls public-facing pages. To test for deep vulnerabilities (like Broken Access Control or SQL Injection behind a login wall), you must automate authentication:
+1. Proxy Method: Run your functional end-to-end tests (e.g., using Selenium or Playwright) and route their network traffic through ZAP acting as a local proxy. ZAP will automatically capture the active session tokens and run its security scans against those authenticated pages.
+2. Script Method: Provide a script or a target Header inside your ZAP Automation configuration containing a valid JWT or Bearer token generated right before the scan phase starts.
