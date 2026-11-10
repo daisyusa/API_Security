@@ -1,0 +1,17 @@
+9. Unsafe Consumption of APIs
+
+What it is
+
+Your application integrates with third-party services and trusts their data without validation or guardrails. Whatever the external API returns, your application processes it directly.
+
+A third-party payment callback returns a transaction status. Your application trusts it without verifying the signature or validating the data structure. An attacker sends a forged callback to your callback URL. Your application processes it as legitimate.
+
+The Engineering Failure
+
+External services are treated as trusted by default. There's no defined contract for what valid data from an external service looks like. There's no validation layer between the external service response and the application's processing logic.
+
+Trust is assumed rather than verified.
+
+The Engineering Fix
+
+Every integration with an external service must have a defined contract. The contract specifies what valid data looks like, what fields are required, and what the valid ranges and formats are. Every response from an external service is validated against this contract before any processing happens.
