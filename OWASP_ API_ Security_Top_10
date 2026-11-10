@@ -1,0 +1,7 @@
+What is the OWASP API Security Top 10?
+
+OWASP stands for Open Web Application Security Project. It's a non-profit foundation that produces freely available security guidance for engineers and organizations. The OWASP API Security Top 10 is a regularly updated list of the most critical API vulnerabilities found in production systems globally.
+
+It's not a theoretical list. It's compiled from real security incidents, penetration test findings, and vulnerability reports from production systems across industries. Every item on this list has caused real data breaches, real financial losses, and real regulatory penalties in real organizations.
+
+Understanding this list isn't optional for engineers building APIs. It's foundational knowledge.
