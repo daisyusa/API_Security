@@ -1,0 +1,12 @@
+4. Unrestricted Resource Consumption
+
+What it is
+No rate limiting. A caller can spam critical APIs thousands of times per minute, such as with scraping, brute forcing, or denial of service attacks. The API accepts every request without any throttling or limit on consumption.
+
+The Engineering Failure
+Rate limiting is treated as optional or as a future concern. It's deferred to "when we need to scale" or "when we see abuse." By the time abuse is visible, the damage is already happening. A financial API without rate limiting can be brute-forced for valid account numbers, scraped for pricing data, or simply overwhelmed into unavailability.
+
+The Engineering Fix
+Rate limiting must be implemented at the API gateway layer, before requests reach the service layer. This isn't a service responsibility. The gateway is the right enforcement point because it can handle this for all services simultaneously without each service reimplementing it.
+
+Different endpoints need different limits. Authentication endpoints need strict limits (5 attempts per 5 minutes per IP). Public read endpoints need moderate limits. Write operations on sensitive resources need strict limits.
