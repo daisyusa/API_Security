@@ -1,0 +1,11 @@
+10. Server-Side Request Forgery (SSRF)
+What it is
+An API accepts a URL as input and makes a server-side request to that URL. An attacker provides a URL that points to internal infrastructure: http://169.254.169.254/latest/meta-data/ (AWS metadata service), http://internal-database:5432, or http://admin-panel.internal. The server makes the request from inside the network, bypassing external firewalls.
+
+Most payment systems take callback URLs or redirect URLs in the request. If the API forwards requests to those URLs without validation, it will happily make requests to internal infrastructure on behalf of the attacker.
+
+The Engineering Failure
+This is a design flaw that must be caught at the architectural layer, not the code layer. Any API that accepts URLs as input and makes server-side requests to those URLs is a potential SSRF target. The design decision to accept arbitrary URLs must come with the design decision to strictly validate those URLs.
+
+The Engineering Fix
+Any API that accepts a URL must validate it against a list of allowed domains before making any request. This is a design decision. The allowlist is part of the API's specification, not an afterthought.
