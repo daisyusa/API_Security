@@ -1,5 +1,10 @@
 # API_Security
 
+OWASP Top 10:2025
+
+https://top10.owasp.org/2025/
+
+
 Conclusion
 
 Every vulnerability in this list has one thing in common: it was preventable. Not by security tools applied after the fact, but by engineering discipline applied during design and development.
